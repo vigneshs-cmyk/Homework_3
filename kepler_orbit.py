@@ -20,7 +20,7 @@ ry0 = 0
 vx0 = 0
 vy0 = 0.3/(np.sqrt(rx0))
 
-dt =  0.01
+dt =  [0.125, 0.100, 0.075]
 Nt = 10000
 
 def accecleration(rx, ry):
@@ -29,22 +29,7 @@ def accecleration(rx, ry):
     ay = -ry / r**3
     return ax, ay
 
-
-#Implemeting the numerical solution using the 2nd order Runge-Kutta method
-rx = np.zeros(Nt)
-ry = np.zeros(Nt)
-rx[0] = rx0
-ry[0] = ry0
-vx = np.zeros(Nt)
-vy = np.zeros(Nt)
-vx[0] = vx0
-vy[0] = vy0
-ax = np.zeros(Nt)
-ay = np.zeros(Nt)
-ax[0], ay[0] = accecleration(rx[0], ry[0])
-
-
-def RK2(rx, ry, vx, vy, ax, ay, dt):
+def RK2(rx, ry, vx, vy, dt):
     for i in range(Nt - 1):
         ax1, ay1 = accecleration(rx[i], ry[i])          # k1 for velocity
         k1x, k1y = vx[i], vy[i]
@@ -62,19 +47,51 @@ def RK2(rx, ry, vx, vy, ax, ay, dt):
         vx[i+1] = vx[i] + dt * ax2
         vy[i+1] = vy[i] + dt * ay2
 
-RK2(rx, ry, vx, vy, ax, ay, dt)
+def velocity_verlet(rx, ry, vx, vy, dt):
+    for i in range(Nt - 1):
+        ax, ay = accecleration(rx[i], ry[i])
+        rx[i+1] = rx[i] + vx[i] * dt + 0.5 * ax * dt**2
+        ry[i+1] = ry[i] + vy[i] * dt + 0.5 * ay * dt**2
 
+        ax_next, ay_next = accecleration(rx[i+1], ry[i+1])
+        vx[i+1] = vx[i] + 0.5 * (ax + ax_next) * dt
+        vy[i+1] = vy[i] + 0.5 * (ay + ay_next) * dt
 
+        
 
-#plotting the RK2 numerical solution
-plt.plot(rx[0], ry[0], 'bo', label='Initial Position')  # plot the initial position
-plt.plot(rx, ry, color='orange', label='RK2 Solution')  # plot the numerical solution
+#Implemeting the numerical solution using the 2nd order Runge-Kutta method
+rx_RK = np.zeros(Nt)
+ry_RK = np.zeros(Nt)
+rx_RK[0] = rx0
+ry_RK[0] = ry0
+vx_RK = np.zeros(Nt)
+vy_RK = np.zeros(Nt)
+vx_RK[0] = vx0
+vy_RK[0] = vy0
+# Implemeting the numerical solution using the velocity verlet method
+rx_vv = np.zeros(Nt)
+ry_vv = np.zeros(Nt)
+rx_vv[0] = rx0
+ry_vv[0] = ry0 
+vx_vv = np.zeros(Nt)
+vy_vv = np.zeros(Nt)
+vx_vv[0] = vx0
+vy_vv[0] = vy0
 
-#Plotting the annalytic solution
-plt.plot(x, y, '--', label='Analytic Solution')  # plot the analytic solution
-plt.legend()
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title('Kepler Orbit (analyitc solution vs Numberical solution)')
-plt.savefig('kepler_orbit.png')
-plt.show()
+for i in range(len(dt)):
+    velocity_verlet(rx_vv, ry_vv, vx_vv, vy_vv, dt[i])
+    RK2(rx_RK, ry_RK, vx_RK, vy_RK, dt[i])
+    plt.plot(rx0, ry0, 'bo', label='Initial Position', markersize=8)  # plot the initial position
+
+    #plotting the RK2 numerical solution
+    plt.plot(rx_RK, ry_RK, color='red', label='RK2 Solution', linewidth=2)  # plot the numerical solution
+    #plotting the velocity verlet numerical solution
+    plt.plot(rx_vv, ry_vv, color='blue', label='Velocity Verlet Solution', linewidth=2)  # plot the numerical solution
+    #Plotting the annalytic solution
+    plt.plot(x, y, 'k--', label='Analytic Solution')  # plot the analytic solution
+    plt.legend()
+    plt.xlabel('x')
+    plt.ylabel('y') 
+    plt.title('Kepler Orbit (analytic solution vs Numerical solution) dt = ' + str(dt[i]))
+    plt.savefig('kepler_orbit_dt' + str(dt[i]) + '.png')
+    plt.show()
